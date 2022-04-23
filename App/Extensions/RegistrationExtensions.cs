@@ -6,4 +6,9 @@ public static class RegistrationExtensions
     {
         collection.AddSingleton<IBot, Bot>();
     }
+
+    public static void RegisterReactions(DiscordSocketClient _client)
+    {
+        //_client.ReactionAdded += Commands.Casino.ReactionAdded;
+    }
 }

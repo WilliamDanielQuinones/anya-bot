@@ -50,7 +50,7 @@ public class Bot : IBot
         await Task.Delay(-1);
     }
 
-    private async Task HandleCommandAsync(SocketMessage arg, IServiceProvider services)
+    private async Task HandleCommand(SocketMessage arg, IServiceProvider services)
     {
         // Bail out if it's a System Message.
         var msg = arg as SocketUserMessage;
@@ -64,7 +64,6 @@ public class Bot : IBot
         // Uncomment the second half if you also want commands to be invoked by mentioning the bot instead.
         if (msg.HasCharPrefix('d', ref pos) /* || msg.HasMentionPrefix(_client.CurrentUser, ref pos) */)
         {
-            Console.WriteLine(msg);
             // Create a Command Context.
             var context = new SocketCommandContext(_client, msg);
 
@@ -110,8 +109,8 @@ public class Bot : IBot
         // Module classes MUST be marked 'public' or they will be ignored.
         await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), services);
 
-        // Subscribe a handler to see if a message invokes a command.
-        _client.MessageReceived += arg => HandleCommandAsync(arg, services);
+        _client.MessageReceived += arg => HandleCommand(arg, services);
+        RegistrationExtensions.RegisterReactions(_client);
     }
 }
 

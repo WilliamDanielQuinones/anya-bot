@@ -1,6 +1,6 @@
 ﻿namespace App.Commands;
 
-public  class CoinFlip : ModuleBase<SocketCommandContext>
+public class CoinFlip : ModuleBase<SocketCommandContext>
 {
     readonly Random rand = new();
 
