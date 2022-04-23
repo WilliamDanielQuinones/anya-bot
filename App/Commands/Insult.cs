@@ -21,6 +21,6 @@ public class Insult : ModuleBase<SocketCommandContext>
 
         var insult = rand.Next(0, insultList.Length);
 
-        await ReplyAsync($"Hey <@{183792569640157185}>, <@{709240065548746754}> says: {insult}");
+        await ReplyAsync($"Hey <@{183792569640157185}>, <@{709240065548746754}> says: {insultList[insult]}");
     }
 }
