@@ -62,7 +62,7 @@ public class Bot : IBot
         // Create a number to track where the prefix ends and the command begins
         int pos = 1;
         // Uncomment the second half if you also want commands to be invoked by mentioning the bot instead.
-        if (msg.HasStringPrefix("d!", ref pos) /* || msg.HasMentionPrefix(_client.CurrentUser, ref pos) */)
+        if (msg.HasStringPrefix("d!", ref pos) || msg.HasStringPrefix("D!", ref pos)/* || msg.HasMentionPrefix(_client.CurrentUser, ref pos) */)
         {
             // Create a Command Context.
             var context = new SocketCommandContext(_client, msg);
