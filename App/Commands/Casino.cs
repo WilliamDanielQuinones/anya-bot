@@ -101,7 +101,7 @@ public class Casino : ModuleBase<SocketCommandContext>
     {
         if (Context.User.Id != userId) return;
 
-        var casinoPotChannel = Context.Guild.GetTextChannel(casinoPotChannelId);
+        var casinoPotChannel = Context.Guild.GetTextChannel(961470303039541248);
         if (casinoPotChannel == null)
         {
             await ReplyAsync($"casino-pot channel not found in this server.");
@@ -149,7 +149,7 @@ public class Casino : ModuleBase<SocketCommandContext>
 
     private async Task<string[]?> GetCasinoList()
     {
-        var casinoPotChannel = Context.Guild.GetTextChannel(casinoPotChannelId);
+        var casinoPotChannel = Context.Guild.GetTextChannel(961470303039541248);
         if (casinoPotChannel == null)
         {
             await ReplyAsync($"card-casino-info channel not found in this server.");
@@ -178,7 +178,7 @@ public class Casino : ModuleBase<SocketCommandContext>
         {
             var messageId = casinoListMessageIds[i];
             var listChunk = listChunks[i];
-            await Context.Guild.GetTextChannel(casinoPotChannelId).ModifyMessageAsync(messageId, m => m.Content = string.Join('\n', listChunk));
+            await Context.Guild.GetTextChannel(961470303039541248).ModifyMessageAsync(messageId, m => m.Content = string.Join('\n', listChunk));
         }
     }
 }
