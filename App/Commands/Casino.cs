@@ -7,7 +7,7 @@ public class Casino : ModuleBase<SocketCommandContext>
     readonly Random rand = new();
     private readonly ObjectCache cache = MemoryCache.Default;
     private readonly ulong casinoPotChannelId = 961470303039541248;
-    private readonly ulong[] casinoListMessageIds = new ulong[] { 967655260921409546, 967655261806411789, 967655263316353084 };
+    private readonly ulong[] casinoListMessageIds = new ulong[] { 967657864841818112, 967657865835847700, 967657866750205992 };
     private readonly ulong userId = 109065356085047296;
 
     [Command("casino")]
@@ -19,7 +19,7 @@ public class Casino : ModuleBase<SocketCommandContext>
         embed.Color = Color.Red;
 
         embed.Title = "--------------------WELCOME TO THE CARD CASINO--------------------";
-        embed.AddField("How to Play", "𝟥 𝖳𝖨𝖢𝖪𝖤𝖳𝖲 𝖳𝖮 𝖯𝖫𝖠𝖸 | Kmt Dann IN THE #card-casino-floor channel | USE COMMAND `d!casinoroll` | 𝖫𝖮𝖢𝖪-𝖨𝖭 𝟥 𝖳𝖨𝖢𝖪𝖤𝖳𝖲​​​​​ | CARD LIST IN #card-casino-floor", true);
+        embed.AddField("How to Play", "𝟥 𝖳𝖨𝖢𝖪𝖤𝖳𝖲 𝖳𝖮 𝖯𝖫𝖠𝖸 | Kmt Dann IN THE #card-casino-floor channel | USE COMMAND `d!casinoroll` | 𝖫𝖮𝖢𝖪-𝖨𝖭 𝟥 𝖳𝖨𝖢𝖪𝖤𝖳𝖲​​​​​ | CARD LIST IN #card-casino channel", true);
 
         await Context.Channel.SendMessageAsync("", false, embed.Build());
     }
