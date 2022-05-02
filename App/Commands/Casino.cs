@@ -19,7 +19,7 @@ public class Casino : ModuleBase<SocketCommandContext>
         embed.Color = Color.Red;
 
         embed.Title = "--------------------WELCOME TO THE CARD CASINO--------------------";
-        embed.AddField("How to Play", "𝟥 𝖳𝖨𝖢𝖪𝖤𝖳𝖲 𝖳𝖮 𝖯𝖫𝖠𝖸 | Kmt Dann IN THE #card-casino-floor channel | USE COMMAND `d!casinoroll` | 𝖫𝖮𝖢𝖪-𝖨𝖭 𝟥 𝖳𝖨𝖢𝖪𝖤𝖳𝖲​​​​​ | CARD LIST IN #card-casino-info channel", true);
+        embed.AddField("How to Play", "𝟥 𝖳𝖨𝖢𝖪𝖤𝖳𝖲 𝖳𝖮 𝖯𝖫𝖠𝖸 | Kmt Dann IN THE #card-casino-floor channel | CALL ANYA-BOT BY USING THE COMMAND `d!casinoroll` OR `d!roll` | 𝖫𝖮𝖢𝖪-𝖨𝖭 𝟥 𝖳𝖨𝖢𝖪𝖤𝖳𝖲​​​​​ | CARD LIST IN #card-casino-info channel", true);
 
         await Context.Channel.SendMessageAsync("", false, embed.Build());
     }
@@ -27,7 +27,7 @@ public class Casino : ModuleBase<SocketCommandContext>
     [Command("casinoroll")]
     [Name("casino card roll")]
     [Summary("Rolls a card from the casino -- Currently only works in Ethans server")]
-    [Alias("cr")]
+    [Alias("cr", "roll")]
     public async Task CasinoCommand()
     {
         var user = Context.User;
@@ -57,41 +57,55 @@ public class Casino : ModuleBase<SocketCommandContext>
     [Command("casinoremove")]
     [Name("removes card from casino pot")]
     [Summary("Removes card from casino pot -- Currently only works in Ethans server")]
-    [Alias("cre")]
-    public async Task CasinoRemoveCommand([Remainder][Summary("Removes this card from the pot")] string cardId)
+    [Alias("cre", "rem")]
+    public async Task CasinoRemoveCommand([Remainder][Summary("Removes cards from the pot")] string cardIds)
     {
         if (Context.User.Id != userId) return;
+
+        var cards = cardIds.Split(',');
 
         var casinoList = await GetCasinoList(Context);
         if (casinoList == null) return;
 
-        var updatedList = casinoList.Where(card => !card.Contains(cardId)).ToArray();
-        await UpdateCasinoList(updatedList.ToArray());
-
-        await ReplyAsync($"{cardId} has been removed from the pot");
+        foreach (var card in cards)
+        {
+            casinoList = casinoList.Where(c => !c.Contains(card.Trim())).ToArray();
+            await UpdateCasinoList(casinoList.ToArray());
+        }
+        await ReplyAsync($"{cardIds} have been removed from the pot");
     }
 
     [Command("casinoadd")]
     [Name("adds card to casino pot")]
     [Summary("Adds card to casino pot -- Currently only works in Ethans server")]
-    [Alias("ca")]
-    public async Task CasinoAddCommand([Remainder][Summary("Adds this card to the pot")] string fullCardText)
+    [Alias("ca", "add")]
+    public async Task CasinoAddCommand([Remainder][Summary("Adds this card to the pot")] string cardIds)
     {
         if (Context.User.Id != userId) return;
 
-        var casinoList = await GetCasinoList(Context);
-        if (casinoList == null) return;
+        var cards = cardIds.Split(',');
 
-        var updatedList = casinoList.ToList();
-        if(updatedList.Contains(fullCardText))
+        var cardsAdded = new List<string>();
+
+        var list = await GetCasinoList(Context);
+        if (list == null) return;
+
+        var currentCardList = list.ToList();
+
+        foreach (var card in cards)
         {
-            await ReplyAsync($"{fullCardText} is already in the pot");
-            return;
+            if (currentCardList.Contains(card))
+            {
+                await ReplyAsync($"{card} is already in the pot");
+            }else
+            {
+                currentCardList.Add(card);
+                await UpdateCasinoList(currentCardList.ToArray());
+                cardsAdded.Add(card);
+            }
+            
         }
-        updatedList.Add(fullCardText);
-        await UpdateCasinoList(updatedList.ToArray());
-
-        await ReplyAsync($"{fullCardText} has been added to the pot");
+        await ReplyAsync($"{string.Join(',', cardsAdded)} have been added to the pot");
     }
 
     [Command("casinopotfill")]
@@ -101,7 +115,7 @@ public class Casino : ModuleBase<SocketCommandContext>
     {
         if (Context.User.Id != userId) return;
 
-        var casinoPotChannel = Context.Guild.GetTextChannel(961470303039541248);
+        var casinoPotChannel = Context.Guild.GetTextChannel(casinoPotChannelId);
         if (casinoPotChannel == null)
         {
             await ReplyAsync($"card-casino-info channel not found in this server.");
@@ -109,14 +123,115 @@ public class Casino : ModuleBase<SocketCommandContext>
         };
 
         var cardList = new string[] {
-            "94fm9t ◈2 Arcane Jinx","913m6x ◈3 Genshin Impact Ganyu","982bwh ◈3 Genshin Impact Ganyu","98f39r ◈2 Genshin Impact Xiao","9l4l37 ◈3 Genshin Impact Xiao","fmbk1k ◈3 Genshin Impact Zhongli","95wb1f ◈2 Jujutsu Kaisen Toge Inumaki","91dds7 ◈2 Horimiya Izumi Miyamura","98z9h3 ◈3 My Hero Academia Katsuki Bakugou","99577g ◈1 Genshin Impact Arataki Itto","93lf46 ◈3 My Hero Academia 2 Himiko Toga","9rmmh9 ◈2 Genshin Impact Venti","gs5nt1 ◈3 Genshin Impact Venti","96jp02 ◈3 The Case Study of Vanitas Vanitas","glsl2z ◈1 Fate/stay night Saber","9tlm5x ◈2 Genshin Impact Shenhe","9t366h ◈1 Haikyuu!! Tobio Kageyama","9rdxtl ◈2 Genshin Impact Klee","g7510z ◈2 Genshin Impact Albedo","9ztxq9 ◈3 Genshin Impact Albedo","99m8l1 ◈3 No Game No Life Shiro","fqz4m2 ◈3 Genshin Impact Sangonomiya Kokomi","f1t84b ◈4 Genshin Impact Yoimiya","f2g3ft ◈3 Genshin Impact Yoimiya","98z9b9 ◈3 JoJo's Bizarre Adventure: Golden Wind Giorno Giovanna","ggsc6k ◈2 JoJo's Bizarre Adventure: Golden Wind Giorno Giovanna","9mbxft ◈1 Mieruko-chan Miko Yotsuya","gc3xxg ◈2 Mieruko-chan Miko Yotsuya","glslbs ◈2 Demon Slayer: Kimetsu no Yaiba Kanao Tsuyuri","9jmnc5 ◈3 Your lie in April Kaori Miyazono","9h62d1 ◈3 Mob Psycho 100 Shigeo Kageyama","gtwj4v ◈1 Mob Psycho 100 Shigeo Kageyama","9bmqfw ◈3 Berserk Guts","9vl3jx ◈2 Hatsune Miku: Downloader Miku Hatsune","9qgdqz ◈3 NieR: Automata 2B","91zvlf ◈2 KonoSuba: God's blessing on this wonderful world! Aqua","9ztxb9 ◈3 Genshin Impact Paimon","9kwvxl ◈1 Genshin Impact Paimon","993f8m ◈4 Howl's Moving Castle Howl","9q8swb ◈3 Attack on Titan: The Final Season Pieck Finger","947bmr ◈3 Noragami Yato","gd5vf4 ◈2 Attack on Titan Sasha Braus","98b1zz ◈3 Genshin Impact Mona","9nb108 ◈3 Persona 5 the Animation Joker","97fbnx ◈1 Genshin Impact Yanfei","gprfs5 ◈2 One Piece Usopp","9z6bjr ◈3 To Your Eternity Fushi","9qgd02 ◈3 The Seven Deadly Sins Ban","gszq14 ◈2 Bakemonogatari Hitagi Senjogahara","9t766h ◈3 Genshin Impact Gorou","9vrlh6 ◈2 Genshin Impact Chongyun","9359z4 ◈3 The God of High School Jin Mori","9tlm98 ◈4 The God of High School Jin Mori","95djh1 ◈3 Haikyuu!! Tetsurou Kuroo","913vq9 ◈3 Genshin Impact Fischl","90lhdl ◈2 Doki Doki Literature Club! Natsuki","fbltk6 ◈3 Doki Doki Literature Club! Natsuki","f50j8l ◈4 Vinland Saga Thorfinn Thordarson","9d0hss ◈4 Genshin Impact Qiqi","g751h5 ◈2 Doki Doki Literature Club! Sayori","9b5jtk ◈1 Demon Slayer: Kimetsu no Yaiba Sabito","g4wl2k ◈3 Fullmetal Alchemist Roy Mustang","gplmdd ◈3 Attack on Titan Annie Leonhart","93dgv5 ◈3 Bakemonogatari Shinobu Oshino","fq3f68 ◈3 Genshin Impact Lumine","fwnjp0 ◈4 Tokyo Revengers Nahoya Kawata","9t766p ◈4 One-Punch Man Fubuki","9p27bg ◈3 No Game No Life Jibril","g610fh ◈3 Genshin Impact Amber","g1tf0f ◈2 Hololive EN Ceres Fauna","9wgcks ◈3 Komi-san wa, Komyushou desu. Najimi Osana","9rqdjp ◈3 Soul Eater Death the Kid","gfthg4 ◈1 Genshin Impact Noelle","9rqdjd ◈2 Genshin Impact Noelle","fw71b4 ◈3 Final Fantasy VII Cloud Strife","r3qfvz ◈1 Demon Slayer: Kimetsu no Yaiba Gyoumei Himejima","9ftr3v ◈3 Genshin Impact Aether","gl8w5g ◈3 Genshin Impact Sucrose","3pvz17 ◈1 JoJo's Bizarre Adventure: Golden Wind Bruno Bucciarati","gprfsb ◈3 My Hero Academia 4 Mirko","9qx04j ◈3 The Seven Deadly Sins: Signs of Holy War Escanor","913vml ◈3 Re:ZERO -Starting Life in Another World- Ferris","9rzwc1 ◈3 Kaguya-sama: Love Is War Yu Ishigami","982bpf ◈2 Hololive: Holo no Graffiti Kiryu Coco","fb18qn ◈4 Puella Magi Madoka Magica Homura Akemi","9bhwb2 ◈2 Jujutsu Kaisen Mahito","9grwf3 ◈3 Hunter x Hunter Leorio Paladiknight","9z6b55 ◈3 Soul Eater Maka Albarn","fzfn7m ◈4 JoJo's Bizarre Adventure: Stardust Crusaders Jean Pierre Polnareff","gh8vxg ◈2 JoJo's Bizarre Adventure: Diamond Is Unbreakable Rohan Kishibe","f40hnt ◈4 Highschool of the Dead Saeko Busujima","9fhs32 ◈3 Bakemonogatari Black Hanekawa","9fhsg8 ◈2 JoJo's Bizarre Adventure: Stone Ocean F.F.","g5qtfw ◈2 Final Fantasy VII Sephiroth","fw7159 ◈4 Saekano: How to Raise a Boring Girlfriend Megumi Katou","gk6nms ◈2 Ouran High School Host Club Haruhi Fujioka","g7q7gw ◈3 Tengen Toppa Gurren Lagann Yoko Littner","g610fk ◈2 Genshin Impact Yun Jin","g5qtgp ◈1 Sailor Moon Usagi Tsukino","9gfwg1 ◈3 Steins;Gate Mayuri Shiina","fbltmb ◈3 Genshin Impact Barbara","fgkj17 ◈3 Kuroko's Basketball Taiga Kagami","9kwvxf ◈3 My Hero Academia 3 Nejire Hado","fg0r3g ◈3 Pokémon Eevee","93mrs5 ◈3 My Hero Academia 3 Mirio Togata","pb6n06 ◈2 Nisekoi Kosaki Onodera","9f6277 ◈3 Noragami Yukine","9bhw55 ◈3 Persona 5 the Animation Goro Akechi","9dth9h ◈2 Pokémon: Black & White: Adventures in Unova N","gk6n06 ◈2 Kaguya-sama: Love Is War Kei Shirogane"
-        };
-        var chunkedList = Helpers.Split(cardList, 40).ToArray();
-
-        foreach (var list in chunkedList)
-        {
-            await casinoPotChannel.SendMessageAsync(string.Join('\n', list));
-        }
+            "fx0ls4 Attack on Titan · Annie Leonhart",
+            "gplmdd Attack on Titan · Annie Leonhart",
+            "gd5vf4 Attack on Titan · Sasha Braus",
+            "9q8swb Attack on Titan: The Final Season · Pieck Finger",
+            "gszq14 Bakemonogatari · Hitagi Senjogahara",
+            "9bmqfw Berserk · Guts",
+            "gx1mfs Death Note · Light Yagami",
+            "9p279k Death Note · Misa Amane",
+            "9p0hsj Demon Slayer: Kimetsu no Yaiba · Genya Shinazugawa",
+            "r3qfvz Demon Slayer: Kimetsu no Yaiba · Gyoumei Himejima",
+            "9b5jtk Demon Slayer: Kimetsu no Yaiba · Sabito",
+            "fbltk6 Doki Doki Literature Club! · Natsuki",
+            "f5xxbz ERASED · Satoru Fujinuma",
+            "fnsz80 Fairy Tail · Zeref",
+            "fw71b4 Final Fantasy VII · Cloud Strife",
+            "g5qtfw Final Fantasy VII · Sephiroth",
+            "g7510z Genshin Impact · Albedo",
+            "9ztxq9 Genshin Impact · Albedo",
+            "g610fh Genshin Impact · Amber",
+            "99577g Genshin Impact · Arataki Itto",
+            "fbltmb Genshin Impact · Barbara",
+            "9vrlh6 Genshin Impact · Chongyun",
+            "9957s4 Genshin Impact · Dodoco",
+            "913m6x Genshin Impact · Ganyu",
+            "g6qplt Genshin Impact · Kairagi: Dancing Thunder",
+            "9rdxtl Genshin Impact · Klee",
+            "fq3f68 Genshin Impact · Lumine",
+            "98b1zz Genshin Impact · Mona",
+            "gfthg4 Genshin Impact · Noelle",
+            "9ztxb9 Genshin Impact · Paimon",
+            "9kwvxl Genshin Impact · Paimon",
+            "fb18vf Genshin Impact · Qiu'ge",
+            "fqz4m2 Genshin Impact · Sangonomiya Kokomi",
+            "gl8w5g Genshin Impact · Sucrose",
+            "9b5j8k Genshin Impact · Timmie",
+            "9rmmh9 Genshin Impact · Venti",
+            "gs5nt1 Genshin Impact · Venti",
+            "98f39r Genshin Impact · Xiao",
+            "9l4l37 Genshin Impact · Xiao",
+            "96x863 Genshin Impact · Xinyan",
+            "f1t84b Genshin Impact · Yoimiya",
+            "g610fk Genshin Impact · Yun Jin",
+            "fmbk1k Genshin Impact · Zhongli",
+            "9t366h Haikyuu!! · Tobio Kageyama",
+            "9vl3jx Hatsune Miku: Downloader · Miku Hatsune",
+            "f40hnt Highschool of the Dead · Saeko Busujima",
+            "91dds7 Horimiya · Izumi Miyamura",
+            "993f8m Howl's Moving Castle · Howl",
+            "93qctb Hunter x Hunter · Kite",
+            "98z9b9 JoJo's Bizarre Adventure: Golden Wind · Giorno Giovanna",
+            "ggsc6k JoJo's Bizarre Adventure: Golden Wind · Giorno Giovanna",
+            "fzfn7m JoJo's Bizarre Adventure: Stardust Crusaders · Jean Pierre Polnareff",
+            "947bhm JoJo's Bizarre Adventure: Steel Ball Run · Gyro Zeppeli",
+            "9fhsg8 JoJo's Bizarre Adventure: Stone Ocean · F.F.",
+            "9bhwb2 Jujutsu Kaisen · Mahito",
+            "95wb1f Jujutsu Kaisen · Toge Inumaki",
+            "gz5vtb Jujutsu Kaisen · Utahime Iori",
+            "gk6n06 Kaguya-sama: Love Is War · Kei Shirogane",
+            "9rzwc1 Kaguya-sama: Love Is War · Yu Ishigami",
+            "9wgcks Komi-san wa, Komyushou desu. · Najimi Osana",
+            "9mbxft Mieruko-chan · Miko Yotsuya",
+            "gc3xxg Mieruko-chan · Miko Yotsuya",
+            "g751qz Miss Kobayashi's Dragon Maid · Elma",
+            "pwwqg7 Miss Kobayashi's Dragon Maid · Fafnir",
+            "gtwjp7 Miss Kobayashi's Dragon Maid · Kanna Kamui",
+            "91b2m6 Miss Kobayashi's Dragon Maid · Kobayashi",
+            "91kkvw Miss Kobayashi's Dragon Maid · Lucoa",
+            "gfvxxb Miss Kobayashi's Dragon Maid · Riko Saikawa",
+            "g496db Miss Kobayashi's Dragon Maid · Shouta Magatsuchi",
+            "9ftrgb Miss Kobayashi's Dragon Maid S · Ilulu",
+            "9h62d1 Mob Psycho 100 · Shigeo Kageyama",
+            "gtwj4v Mob Psycho 100 · Shigeo Kageyama",
+            "93lf46 My Hero Academia 2 · Himiko Toga",
+            "9kwvxf My Hero Academia 3 · Nejire Hado",
+            "gprfsb My Hero Academia 4 · Mirko",
+            "9qgdqz NieR: Automata · 2B",
+            "9p27bg No Game No Life · Jibril",
+            "99m8l1 No Game No Life · Shiro",
+            "9f6277 Noragami · Yukine",
+            "gprfs5 One Piece · Usopp",
+            "9t766p One-Punch Man · Fubuki",
+            "9tlm5v Oshi no Ko · Ruby Hoshino",
+            "fppvxj Osomatsu-san · Obama",
+            "9grw3w Persona 5 Royal · Kasumi Yoshizawa",
+            "g7512r Persona 5 Royal · Violet",
+            "grtl2j Persona 5 the Animation · Ann Takamaki",
+            "g751hj Persona 5 the Animation · Haru Okumura",
+            "95nkqb Persona 5 the Animation · Navi",
+            "gk6nq5 Persona 5 the Animation · Noir",
+            "g610pv Persona 5 the Animation · Panther",
+            "9dth9h Pokémon: Black & White: Adventures in Unova · N",
+            "fb18qn Puella Magi Madoka Magica · Homura Akemi",
+            "fmgrp6 Ranma ½ · Genma Saotome",
+            "fmgrr7 Ranma ½ · Ranma Saotome",
+            "913vml Re:ZERO -Starting Life in Another World- · Ferris",
+            "fw7159 Saekano: How to Raise a Boring Girlfriend · Megumi Katou",
+            "9rzkq1 Soul Eater · Black Star",
+            "9z6b55 Soul Eater · Maka Albarn",
+            "9pb4c5 Steins;Gate · Kurisu Makise",
+            "9gfwg1 Steins;Gate · Mayuri Shiina",
+            "g7q7gw Tengen Toppa Gurren Lagann · Yoko Littner",
+            "9tlm98 The God of High School · Jin Mori",
+            "9qgd02 The Seven Deadly Sins · Ban",
+            "9qx04j The Seven Deadly Sins: Signs of Holy War · Escanor",
+            "9z6bjr To Your Eternity · Fushi",
+            "fwnjp0 Tokyo Revengers · Nahoya Kawata",
+            "f50j8l Vinland Saga · Thorfinn Thordarson",
+            "9jmnc5 Your lie in April · Kaori Miyazono"};
+        await UpdateCasinoList(cardList);
     }
 
     [Command("casinoshift")]
@@ -149,7 +264,7 @@ public class Casino : ModuleBase<SocketCommandContext>
 
     private async Task<string[]?> GetCasinoList(SocketCommandContext context)
     {
-        var casinoPotChannel = context.Guild.GetTextChannel(961470303039541248);
+        var casinoPotChannel = context.Guild.GetTextChannel(casinoPotChannelId);
         if (casinoPotChannel == null)
         {
             await ReplyAsync($"card-casino-info channel not found in this server.");
@@ -174,11 +289,22 @@ public class Casino : ModuleBase<SocketCommandContext>
     private async Task UpdateCasinoList(string[] cardList)
     {
         var listChunks = Helpers.Split(cardList, 40).ToArray();
+        var emptyMessage = "---------";
         for (var i = 0; i < casinoListMessageIds.Length; i++)
         {
             var messageId = casinoListMessageIds[i];
-            var listChunk = listChunks[i];
-            await Context.Guild.GetTextChannel(961470303039541248).ModifyMessageAsync(messageId, m => m.Content = string.Join('\n', listChunk));
+            if(i < listChunks.Length)
+            {
+                var cardBatch = listChunks[i];
+                cardBatch.RemoveAll(c => c == emptyMessage);
+                var newMessage = string.Join('\n', cardBatch);
+                await Context.Guild.GetTextChannel(casinoPotChannelId).ModifyMessageAsync(messageId, m => m.Content = newMessage);
+                Thread.Sleep(1000);
+            }else
+            {
+                await Context.Guild.GetTextChannel(casinoPotChannelId).ModifyMessageAsync(messageId, m => m.Content = emptyMessage);
+                Thread.Sleep(1000);
+            }
         }
     }
 }
