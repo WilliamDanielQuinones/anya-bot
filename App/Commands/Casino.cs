@@ -75,8 +75,9 @@ public class Casino : ModuleBase<SocketCommandContext>
         foreach (var card in cards)
         {
             casinoList = casinoList.Where(c => !c.Contains(card.Trim())).ToArray();
-            await UpdateCasinoList(casinoList.ToArray());
         }
+
+        await UpdateCasinoList(casinoList);
         await ReplyAsync($"{cardIds} have been removed from the pot");
     }
 
@@ -105,12 +106,17 @@ public class Casino : ModuleBase<SocketCommandContext>
             }else
             {
                 currentCardList.Add(card);
-                await UpdateCasinoList(currentCardList.ToArray());
                 cardsAdded.Add(card);
             }
             
         }
-        await ReplyAsync($"{string.Join(',', cardsAdded)} have been added to the pot");
+
+        if(cardsAdded.Count > 0)
+        {
+            await UpdateCasinoList(currentCardList.ToArray());
+            await ReplyAsync($"{string.Join(',', cardsAdded)} have been added to the pot");
+        }
+        
     }
 
     [Command("casinopotfill")]
@@ -301,7 +307,8 @@ public class Casino : ModuleBase<SocketCommandContext>
             if(i < listChunks.Length)
             {
                 var cardBatch = listChunks[i];
-                cardBatch.RemoveAll(c => c == emptyMessage);
+                cardBatch.RemoveAll(c => c == emptyMessage || c == "\n");
+                cardBatch = cardBatch.Select(c => c.ReplaceLineEndings("\n")).ToList();
                 var newMessage = string.Join('\n', cardBatch);
                 await Context.Guild.GetTextChannel(casinoPotChannelId).ModifyMessageAsync(messageId, m => m.Content = newMessage);
                 Thread.Sleep(1000);
