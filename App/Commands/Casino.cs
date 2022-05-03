@@ -52,6 +52,11 @@ public class Casino : ModuleBase<SocketCommandContext>
             await message.AddReactionAsync(new Emoji("🎉"));
             await message.AddReactionAsync(new Emoji("🎊"));
         }
+        if (rolledCard.Contains("💰"))
+        {
+            var message = await Context.Channel.SendMessageAsync($"Oh? Rare drop! Congrats <@{user.Id}>!");
+            await message.AddReactionAsync(new Emoji("💰"));
+        }
     }
 
     [Command("casinoremove")]
