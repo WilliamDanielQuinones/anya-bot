@@ -81,13 +81,13 @@ public class Casino : ModuleBase<SocketCommandContext>
         var rolledCard = shuffledList[roll];
 
         await Context.Channel.SendMessageAsync($"{user.Username} has rolled {shuffledList[roll]}!");
-        if (rolledCard.Contains("🎉"))
+        if (rolledCard.Contains("🎉") || rolledCard.Contains(":tada:"))
         {
             var message = await Context.Channel.SendMessageAsync($"Congratulations <@{user.Id}> on rolling the jackpot!");
             await message.AddReactionAsync(new Emoji("🎉"));
             await message.AddReactionAsync(new Emoji("🎊"));
         }
-        if (rolledCard.Contains("💰"))
+        if (rolledCard.Contains("💰") || rolledCard.Contains(":moneybag:"))
         {
             var message = await Context.Channel.SendMessageAsync($"Oh? Rare drop! Congrats <@{user.Id}>!");
             await message.AddReactionAsync(new Emoji("💰"));
