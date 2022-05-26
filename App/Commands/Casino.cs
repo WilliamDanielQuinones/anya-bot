@@ -1,14 +1,26 @@
-﻿using System.Runtime.Caching;
+﻿using App.Files;
+using System.Diagnostics;
+using System.Runtime.Caching;
 
 namespace App.Commands;
 
 public class Casino : ModuleBase<SocketCommandContext>
 {
+    private readonly IFileService _fileService;
+
+    public Casino(IFileService fileService)
+    {
+        _fileService = fileService;
+    }
+    
     readonly Random rand = new();
-    private readonly ObjectCache cache = MemoryCache.Default;
-    private readonly ulong casinoPotChannelId = 961470303039541248;
-    private readonly ulong[] casinoListMessageIds = new ulong[] { 967659677183782913, 967659678504988692, 967659679536787496 };
-    private readonly ulong userId = 109065356085047296;
+    private static readonly ObjectCache cache = MemoryCache.Default;
+    //private static readonly ulong casinoPotChannelId = 961470303039541248;
+    private static readonly ulong casinoPotChannelId = 979467137112494131;
+    //private static readonly ulong[] casinoListMessageIds = new ulong[] { 967659677183782913, 967659678504988692, 967659679536787496 };
+    private static readonly ulong[] casinoListMessageIds = new ulong[] { 979518742595768392, 979518743237505045, 979518744235753502, 979518744814583869, 979518745095577601, 979518770752127016, 979518771469361192 };
+    private static readonly ulong DannUserId = 109065356085047296;
+    private static readonly ulong AnyaBotUserId = 967451346775199845;
 
     [Command("casino")]
     [Name("casino help")]
@@ -33,7 +45,7 @@ public class Casino : ModuleBase<SocketCommandContext>
         var user = Context.User;
         if(!IsCasinoOpen())
         {
-            await ReplyAsync($"The casino is currently closed, please message <@{userId}> if you would like to play");
+            await ReplyAsync($"The casino is currently closed, please message <@{DannUserId}> if you would like to play");
             return;
         }
 
@@ -45,26 +57,42 @@ public class Casino : ModuleBase<SocketCommandContext>
 
         for (int i = 0; i < rolls; i++)
         {
-            var casinoList = await GetCasinoList(Context);
-            if (casinoList == null) return;
+            await CasinoCommand();
+        }
+    }
 
-            // Roll for a card
-            var roll = rand.Next(0, casinoList.Length);
-            var shuffledList = casinoList.OrderBy(a => Guid.NewGuid()).ToList(); //Create new, random guids for each element and just organize by that. Essentially a shuffle
-            var rolledCard = shuffledList[roll];
+    [Command("casinoroll")]
+    [Name("casino card roll")]
+    [Summary("Rolls a card from the casino -- Currently only works in Ethans server")]
+    [Alias("cr", "roll")]
+    public async Task CasinoCommand()
+    {
+        var user = Context.User;
+        if (!IsCasinoOpen())
+        {
+            await ReplyAsync($"The casino is currently closed, please message <@{DannUserId}> if you would like to play");
+            return;
+        }
 
-            await Context.Channel.SendMessageAsync($"{user.Username} has rolled {shuffledList[roll]}!");
-            if (rolledCard.Contains("🎉"))
-            {
-                var message = await Context.Channel.SendMessageAsync($"Congratulations <@{user.Id}> on rolling the jackpot!");
-                await message.AddReactionAsync(new Emoji("🎉"));
-                await message.AddReactionAsync(new Emoji("🎊"));
-            }
-            if (rolledCard.Contains("💰"))
-            {
-                var message = await Context.Channel.SendMessageAsync($"Oh? Rare drop! Congrats <@{user.Id}>!");
-                await message.AddReactionAsync(new Emoji("💰"));
-            }
+        var casinoList = await GetCasinoList(Context);
+        if (casinoList == null) return;
+
+        // Roll for a card
+        var roll = rand.Next(0, casinoList.Length);
+        var shuffledList = casinoList.OrderBy(a => Guid.NewGuid()).ToList(); //Create new, random guids for each element and just organize by that. Essentially a shuffle
+        var rolledCard = shuffledList[roll];
+
+        await Context.Channel.SendMessageAsync($"{user.Username} has rolled {shuffledList[roll]}!");
+        if (rolledCard.Contains("🎉"))
+        {
+            var message = await Context.Channel.SendMessageAsync($"Congratulations <@{user.Id}> on rolling the jackpot!");
+            await message.AddReactionAsync(new Emoji("🎉"));
+            await message.AddReactionAsync(new Emoji("🎊"));
+        }
+        if (rolledCard.Contains("💰"))
+        {
+            var message = await Context.Channel.SendMessageAsync($"Oh? Rare drop! Congrats <@{user.Id}>!");
+            await message.AddReactionAsync(new Emoji("💰"));
         }
     }
 
@@ -74,11 +102,15 @@ public class Casino : ModuleBase<SocketCommandContext>
     [Alias("cre", "rem")]
     public async Task CasinoRemoveCommand([Remainder][Summary("Removes cards from the pot")] string cardIds)
     {
-        if (Context.User.Id != userId) return;
+        if (Context.User.Id != DannUserId) return;
 
+        Stopwatch stopWatch = new Stopwatch();
+        stopWatch.Start();
+        
         var cards = cardIds.Split(',');
 
         var casinoList = await GetCasinoList(Context);
+        await ReplyAsync($"{stopWatch.Elapsed.TotalSeconds} seconds");
         if (casinoList == null) return;
 
         foreach (var card in cards)
@@ -87,7 +119,9 @@ public class Casino : ModuleBase<SocketCommandContext>
         }
 
         await UpdateCasinoList(casinoList);
-        await ReplyAsync($"{cardIds} have been removed from the pot");
+        stopWatch.Stop();
+        var word = cards.Length > 1 ? "have" : "has";
+        await ReplyAsync($"{cardIds} {word} been removed from the pot in {stopWatch.Elapsed.TotalSeconds} seconds");
     }
 
     [Command("casinoadd")]
@@ -96,7 +130,7 @@ public class Casino : ModuleBase<SocketCommandContext>
     [Alias("ca", "add")]
     public async Task CasinoAddCommand([Remainder][Summary("Adds this card to the pot")] string cardIds)
     {
-        if (Context.User.Id != userId) return;
+        if (Context.User.Id != DannUserId) return;
 
         var cards = cardIds.Split(',');
 
@@ -117,13 +151,13 @@ public class Casino : ModuleBase<SocketCommandContext>
                 currentCardList.Add(card);
                 cardsAdded.Add(card);
             }
-            
         }
 
         if(cardsAdded.Count > 0)
         {
             await UpdateCasinoList(currentCardList.ToArray());
-            await ReplyAsync($"{string.Join(',', cardsAdded)} have been added to the pot");
+            var word = cards.Length > 1 ? "have" : "has";
+            await ReplyAsync($"{string.Join(',', cardsAdded)} {word} been added to the pot");
         }
         
     }
@@ -133,125 +167,42 @@ public class Casino : ModuleBase<SocketCommandContext>
     [Summary("Fills casino pot with cards -- Currently only works in Ethans server")]
     public async Task CasinoPotCommand()
     {
-        if (Context.User.Id != userId) return;
+        if (Context.User.Id != DannUserId) return;
 
-        var casinoPotChannel = Context.Guild.GetTextChannel(casinoPotChannelId);
+        /*var casinoPotChannel = Context.Guild.GetTextChannel(casinoPotChannelId);
         if (casinoPotChannel == null)
         {
             await ReplyAsync($"card-casino-info channel not found in this server.");
             return;
-        };
+        };*/
 
-        var cardList = new string[] {
-            "fx0ls4 Attack on Titan · Annie Leonhart",
-            "gplmdd Attack on Titan · Annie Leonhart",
-            "gd5vf4 Attack on Titan · Sasha Braus",
-            "9q8swb Attack on Titan: The Final Season · Pieck Finger",
-            "gszq14 Bakemonogatari · Hitagi Senjogahara",
-            "9bmqfw Berserk · Guts",
-            "gx1mfs Death Note · Light Yagami",
-            "9p279k Death Note · Misa Amane",
-            "9p0hsj Demon Slayer: Kimetsu no Yaiba · Genya Shinazugawa",
-            "r3qfvz Demon Slayer: Kimetsu no Yaiba · Gyoumei Himejima",
-            "9b5jtk Demon Slayer: Kimetsu no Yaiba · Sabito",
-            "fbltk6 Doki Doki Literature Club! · Natsuki",
-            "f5xxbz ERASED · Satoru Fujinuma",
-            "fnsz80 Fairy Tail · Zeref",
-            "fw71b4 Final Fantasy VII · Cloud Strife",
-            "g5qtfw Final Fantasy VII · Sephiroth",
-            "g7510z Genshin Impact · Albedo",
-            "9ztxq9 Genshin Impact · Albedo",
-            "g610fh Genshin Impact · Amber",
-            "99577g Genshin Impact · Arataki Itto",
-            "fbltmb Genshin Impact · Barbara",
-            "9vrlh6 Genshin Impact · Chongyun",
-            "9957s4 Genshin Impact · Dodoco",
-            "913m6x Genshin Impact · Ganyu",
-            "g6qplt Genshin Impact · Kairagi: Dancing Thunder",
-            "9rdxtl Genshin Impact · Klee",
-            "fq3f68 Genshin Impact · Lumine",
-            "98b1zz Genshin Impact · Mona",
-            "gfthg4 Genshin Impact · Noelle",
-            "9ztxb9 Genshin Impact · Paimon",
-            "9kwvxl Genshin Impact · Paimon",
-            "fb18vf Genshin Impact · Qiu'ge",
-            "fqz4m2 Genshin Impact · Sangonomiya Kokomi",
-            "gl8w5g Genshin Impact · Sucrose",
-            "9b5j8k Genshin Impact · Timmie",
-            "9rmmh9 Genshin Impact · Venti",
-            "gs5nt1 Genshin Impact · Venti",
-            "98f39r Genshin Impact · Xiao",
-            "9l4l37 Genshin Impact · Xiao",
-            "96x863 Genshin Impact · Xinyan",
-            "f1t84b Genshin Impact · Yoimiya",
-            "g610fk Genshin Impact · Yun Jin",
-            "fmbk1k Genshin Impact · Zhongli",
-            "9t366h Haikyuu!! · Tobio Kageyama",
-            "9vl3jx Hatsune Miku: Downloader · Miku Hatsune",
-            "f40hnt Highschool of the Dead · Saeko Busujima",
-            "91dds7 Horimiya · Izumi Miyamura",
-            "993f8m Howl's Moving Castle · Howl",
-            "93qctb Hunter x Hunter · Kite",
-            "98z9b9 JoJo's Bizarre Adventure: Golden Wind · Giorno Giovanna",
-            "ggsc6k JoJo's Bizarre Adventure: Golden Wind · Giorno Giovanna",
-            "fzfn7m JoJo's Bizarre Adventure: Stardust Crusaders · Jean Pierre Polnareff",
-            "947bhm JoJo's Bizarre Adventure: Steel Ball Run · Gyro Zeppeli",
-            "9fhsg8 JoJo's Bizarre Adventure: Stone Ocean · F.F.",
-            "9bhwb2 Jujutsu Kaisen · Mahito",
-            "95wb1f Jujutsu Kaisen · Toge Inumaki",
-            "gz5vtb Jujutsu Kaisen · Utahime Iori",
-            "gk6n06 Kaguya-sama: Love Is War · Kei Shirogane",
-            "9rzwc1 Kaguya-sama: Love Is War · Yu Ishigami",
-            "9wgcks Komi-san wa, Komyushou desu. · Najimi Osana",
-            "9mbxft Mieruko-chan · Miko Yotsuya",
-            "gc3xxg Mieruko-chan · Miko Yotsuya",
-            "g751qz Miss Kobayashi's Dragon Maid · Elma",
-            "pwwqg7 Miss Kobayashi's Dragon Maid · Fafnir",
-            "gtwjp7 Miss Kobayashi's Dragon Maid · Kanna Kamui",
-            "91b2m6 Miss Kobayashi's Dragon Maid · Kobayashi",
-            "91kkvw Miss Kobayashi's Dragon Maid · Lucoa",
-            "gfvxxb Miss Kobayashi's Dragon Maid · Riko Saikawa",
-            "g496db Miss Kobayashi's Dragon Maid · Shouta Magatsuchi",
-            "9ftrgb Miss Kobayashi's Dragon Maid S · Ilulu",
-            "9h62d1 Mob Psycho 100 · Shigeo Kageyama",
-            "gtwj4v Mob Psycho 100 · Shigeo Kageyama",
-            "93lf46 My Hero Academia 2 · Himiko Toga",
-            "9kwvxf My Hero Academia 3 · Nejire Hado",
-            "gprfsb My Hero Academia 4 · Mirko",
-            "9qgdqz NieR: Automata · 2B",
-            "9p27bg No Game No Life · Jibril",
-            "99m8l1 No Game No Life · Shiro",
-            "9f6277 Noragami · Yukine",
-            "gprfs5 One Piece · Usopp",
-            "9t766p One-Punch Man · Fubuki",
-            "9tlm5v Oshi no Ko · Ruby Hoshino",
-            "fppvxj Osomatsu-san · Obama",
-            "9grw3w Persona 5 Royal · Kasumi Yoshizawa",
-            "g7512r Persona 5 Royal · Violet",
-            "grtl2j Persona 5 the Animation · Ann Takamaki",
-            "g751hj Persona 5 the Animation · Haru Okumura",
-            "95nkqb Persona 5 the Animation · Navi",
-            "gk6nq5 Persona 5 the Animation · Noir",
-            "g610pv Persona 5 the Animation · Panther",
-            "9dth9h Pokémon: Black & White: Adventures in Unova · N",
-            "fb18qn Puella Magi Madoka Magica · Homura Akemi",
-            "fmgrp6 Ranma ½ · Genma Saotome",
-            "fmgrr7 Ranma ½ · Ranma Saotome",
-            "913vml Re:ZERO -Starting Life in Another World- · Ferris",
-            "fw7159 Saekano: How to Raise a Boring Girlfriend · Megumi Katou",
-            "9rzkq1 Soul Eater · Black Star",
-            "9z6b55 Soul Eater · Maka Albarn",
-            "9pb4c5 Steins;Gate · Kurisu Makise",
-            "9gfwg1 Steins;Gate · Mayuri Shiina",
-            "g7q7gw Tengen Toppa Gurren Lagann · Yoko Littner",
-            "9tlm98 The God of High School · Jin Mori",
-            "9qgd02 The Seven Deadly Sins · Ban",
-            "9qx04j The Seven Deadly Sins: Signs of Holy War · Escanor",
-            "9z6bjr To Your Eternity · Fushi",
-            "fwnjp0 Tokyo Revengers · Nahoya Kawata",
-            "f50j8l Vinland Saga · Thorfinn Thordarson",
-            "9jmnc5 Your lie in April · Kaori Miyazono"};
-        await UpdateCasinoList(cardList);
+        var (FileName, LastModified) = await _fileService.GetLatestExportFileMetaData("");
+        if (string.IsNullOrWhiteSpace(FileName))
+        {
+            await ReplyAsync($"No card spreadsheet found");
+            return;
+        }
+
+        var cards = await _fileService.GetRemoteCsvFileContent<KarutaCard>(FileName, "", null);
+        if (cards == null)
+        {
+            await ReplyAsync($"No cards found in file");
+            return;
+        }
+        var casinoCards = cards.Where(c => c.Tag == "casino").OrderBy(c => rand.Next()).Take(200).Select(c => new CasinoCard(c)).OrderBy(c => c.Series).ToList();
+
+        // Cut into chunks of 35 to account for discord's message limit
+        var cardLists = casinoCards.Chunk(30).ToArray();
+        var messages = new List<IUserMessage>();
+        foreach (var cardList in cardLists)
+        {
+            if (cardList == null) continue;
+            var cardString = string.Join("\n", cardList.Select(c => c.ToString()));
+            var message = await ReplyAsync(cardString);
+            messages.Add(message);
+        }
+
+        await ReplyAsync("Added all cards! IDs of messages are: " + string.Join(", ", messages.Select(m => m.Id)));
     }
 
     [Command("casinoshift")]
@@ -260,15 +211,10 @@ public class Casino : ModuleBase<SocketCommandContext>
     [Alias("cs")]
     public async Task CasinoOpenCommand()
     {
-        if (Context.User.Id != userId) return;
+        if (Context.User.Id != DannUserId) return;
 
         cache.Set("casinoopen", !IsCasinoOpen(), DateTime.UtcNow.AddDays(1));
         await ReplyAsync($"The casino is now {(IsCasinoOpen() ? "open" : "closed")}!");
-    }
-
-    public static async Task ReactionAdded(Cacheable<IUserMessage, ulong> arg1, Cacheable<IMessageChannel, ulong> arg2, SocketReaction arg3)
-    {
-        
     }
 
     private bool IsCasinoOpen()
@@ -292,39 +238,39 @@ public class Casino : ModuleBase<SocketCommandContext>
         }
 
         var cards = new List<string>();
+        var messageTasks = new List<Task<IMessage>>();
         foreach (var messageId in casinoListMessageIds)
         {
-            var message = await casinoPotChannel.GetMessageAsync(messageId);
-            if (message == null)
-            {
-                await ReplyAsync($"Could not find message with card list.");
-                break;
-            }
-            cards.AddRange(message.Content.Split('\n'));
+            messageTasks.Add(casinoPotChannel.GetMessageAsync(messageId));
         }
 
+        var messages = await Task.WhenAll(messageTasks);
+        foreach(var message in messages)
+        {
+            cards.AddRange(message.Content.Split('\n'));
+        }
         return cards.ToArray();
     }
 
     private async Task UpdateCasinoList(string[] cardList)
     {
-        var listChunks = Helpers.Split(cardList, 40).ToArray();
+        var listChunks = cardList.Chunk(30).ToList();
         var emptyMessage = "---------";
         for (var i = 0; i < casinoListMessageIds.Length; i++)
         {
             var messageId = casinoListMessageIds[i];
-            if(i < listChunks.Length)
+            if(i < listChunks.Count)
             {
-                var cardBatch = listChunks[i];
+                var cardBatch = listChunks[i].ToList();
                 cardBatch.RemoveAll(c => c == emptyMessage || c == "\n");
                 cardBatch = cardBatch.Select(c => c.ReplaceLineEndings("\n")).ToList();
                 var newMessage = string.Join('\n', cardBatch);
-                await Context.Guild.GetTextChannel(casinoPotChannelId).ModifyMessageAsync(messageId, m => m.Content = newMessage);
-                Thread.Sleep(1000);
+                Context.Guild.GetTextChannel(casinoPotChannelId).ModifyMessageAsync(messageId, m => m.Content = newMessage);
+                Thread.Sleep(100);
             }else
             {
-                await Context.Guild.GetTextChannel(casinoPotChannelId).ModifyMessageAsync(messageId, m => m.Content = emptyMessage);
-                Thread.Sleep(1000);
+                Context.Guild.GetTextChannel(casinoPotChannelId).ModifyMessageAsync(messageId, m => m.Content = emptyMessage);
+                Thread.Sleep(100);
             }
         }
     }
