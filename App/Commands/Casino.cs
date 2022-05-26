@@ -28,7 +28,7 @@ public class Casino : ModuleBase<SocketCommandContext>
     [Name("casino card roll")]
     [Summary("Rolls a card from the casino -- Currently only works in Ethans server")]
     [Alias("cr", "roll")]
-    public async Task CasinoCommand()
+    public async Task CasinoCommand([Remainder][Summary("Amount of times to roll: limit 10")] int rolls)
     {
         var user = Context.User;
         if(!IsCasinoOpen())
@@ -37,25 +37,34 @@ public class Casino : ModuleBase<SocketCommandContext>
             return;
         }
 
-        var casinoList = await GetCasinoList(Context);
-        if (casinoList == null) return;
-
-        // Roll for a card
-        var roll = rand.Next(0, casinoList.Length);
-        var shuffledList = casinoList.OrderBy(a => Guid.NewGuid()).ToList(); //Create new, random guids for each element and just organize by that. Essentially a shuffle
-        var rolledCard = shuffledList[roll];
-
-        await Context.Channel.SendMessageAsync($"{user.Username} has rolled {shuffledList[roll]}!");
-        if(rolledCard.Contains("🎉"))
+        if (rolls > 10)
         {
-            var message = await Context.Channel.SendMessageAsync($"Congratulations <@{user.Id}> on rolling the jackpot!");
-            await message.AddReactionAsync(new Emoji("🎉"));
-            await message.AddReactionAsync(new Emoji("🎊"));
+            await ReplyAsync($"You can only roll a maximum of 10 times at once");
+            return;
         }
-        if (rolledCard.Contains("💰"))
+
+        for (int i = 0; i < rolls; i++)
         {
-            var message = await Context.Channel.SendMessageAsync($"Oh? Rare drop! Congrats <@{user.Id}>!");
-            await message.AddReactionAsync(new Emoji("💰"));
+            var casinoList = await GetCasinoList(Context);
+            if (casinoList == null) return;
+
+            // Roll for a card
+            var roll = rand.Next(0, casinoList.Length);
+            var shuffledList = casinoList.OrderBy(a => Guid.NewGuid()).ToList(); //Create new, random guids for each element and just organize by that. Essentially a shuffle
+            var rolledCard = shuffledList[roll];
+
+            await Context.Channel.SendMessageAsync($"{user.Username} has rolled {shuffledList[roll]}!");
+            if (rolledCard.Contains("🎉"))
+            {
+                var message = await Context.Channel.SendMessageAsync($"Congratulations <@{user.Id}> on rolling the jackpot!");
+                await message.AddReactionAsync(new Emoji("🎉"));
+                await message.AddReactionAsync(new Emoji("🎊"));
+            }
+            if (rolledCard.Contains("💰"))
+            {
+                var message = await Context.Channel.SendMessageAsync($"Oh? Rare drop! Congrats <@{user.Id}>!");
+                await message.AddReactionAsync(new Emoji("💰"));
+            }
         }
     }
 
