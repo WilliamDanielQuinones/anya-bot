@@ -1,5 +1,4 @@
 ﻿using App.Files;
-using System.Diagnostics;
 using System.Runtime.Caching;
 
 namespace App.Commands;
@@ -15,12 +14,9 @@ public class Casino : ModuleBase<SocketCommandContext>
     
     readonly Random rand = new();
     private static readonly ObjectCache cache = MemoryCache.Default;
-    //private static readonly ulong casinoPotChannelId = 961470303039541248;
-    private static readonly ulong casinoPotChannelId = 979467137112494131;
-    //private static readonly ulong[] casinoListMessageIds = new ulong[] { 967659677183782913, 967659678504988692, 967659679536787496 };
-    private static readonly ulong[] casinoListMessageIds = new ulong[] { 979518742595768392, 979518743237505045, 979518744235753502, 979518744814583869, 979518745095577601, 979518770752127016, 979518771469361192 };
+    private static readonly ulong casinoPotChannelId = 979520973009199114;
+    private static readonly ulong[] casinoListMessageIds = new ulong[] { 979521480398352434, 979521481006514257, 979521481841180702, 979521482529050654, 979521483254665246, 979521505526448229, 979521506285617172 };
     private static readonly ulong DannUserId = 109065356085047296;
-    private static readonly ulong AnyaBotUserId = 967451346775199845;
 
     [Command("casino")]
     [Name("casino help")]
@@ -31,7 +27,7 @@ public class Casino : ModuleBase<SocketCommandContext>
         embed.Color = Color.Red;
 
         embed.Title = "--------------------WELCOME TO THE CARD CASINO--------------------";
-        embed.AddField("How to Play", "𝟥 𝖳𝖨𝖢𝖪𝖤𝖳𝖲 𝖳𝖮 𝖯𝖫𝖠𝖸 | Kmt Dann IN THE #card-casino-floor channel | CALL ANYA-BOT BY USING THE COMMAND `d!casinoroll` OR `d!roll` | 𝖫𝖮𝖢𝖪-𝖨𝖭 𝟥 𝖳𝖨𝖢𝖪𝖤𝖳𝖲​​​​​ | CARD LIST IN #card-casino-info channel", true);
+        embed.AddField("How to Play", "𝟥 𝖳𝖨𝖢𝖪𝖤𝖳𝖲 𝖳𝖮 𝖯𝖫𝖠𝖸 | Kmt Dann IN THE #card-casino-floor channel | CALL ANYA-BOT BY USING THE COMMAND `d!casinoroll` OR `d!roll` | 𝖫𝖮𝖢𝖪-𝖨𝖭 𝟥 𝖳𝖨𝖢𝖪𝖤𝖳𝖲​​​​​ | CARD LIST IN #card-casino-pot channel", true);
 
         await Context.Channel.SendMessageAsync("", false, embed.Build());
     }
@@ -103,14 +99,11 @@ public class Casino : ModuleBase<SocketCommandContext>
     public async Task CasinoRemoveCommand([Remainder][Summary("Removes cards from the pot")] string cardIds)
     {
         if (Context.User.Id != DannUserId) return;
-
-        Stopwatch stopWatch = new Stopwatch();
-        stopWatch.Start();
         
         var cards = cardIds.Split(',');
 
         var casinoList = await GetCasinoList(Context);
-        await ReplyAsync($"{stopWatch.Elapsed.TotalSeconds} seconds");
+        
         if (casinoList == null) return;
 
         foreach (var card in cards)
@@ -119,9 +112,8 @@ public class Casino : ModuleBase<SocketCommandContext>
         }
 
         await UpdateCasinoList(casinoList);
-        stopWatch.Stop();
         var word = cards.Length > 1 ? "have" : "has";
-        await ReplyAsync($"{cardIds} {word} been removed from the pot in {stopWatch.Elapsed.TotalSeconds} seconds");
+        await ReplyAsync($"{cardIds} {word} been removed from the pot!");
     }
 
     [Command("casinoadd")]
@@ -168,14 +160,7 @@ public class Casino : ModuleBase<SocketCommandContext>
     public async Task CasinoPotCommand()
     {
         if (Context.User.Id != DannUserId) return;
-
-        /*var casinoPotChannel = Context.Guild.GetTextChannel(casinoPotChannelId);
-        if (casinoPotChannel == null)
-        {
-            await ReplyAsync($"card-casino-info channel not found in this server.");
-            return;
-        };*/
-
+        
         var (FileName, LastModified) = await _fileService.GetLatestExportFileMetaData("");
         if (string.IsNullOrWhiteSpace(FileName))
         {
