@@ -15,10 +15,11 @@ public class Casino : ModuleBase<SocketCommandContext>
     readonly Random rand = new();
     private static readonly ObjectCache cache = MemoryCache.Default;
     private static readonly ulong casinoPotChannelId = 979520973009199114;
-    private static readonly ulong[] casinoListMessageIds = new ulong[] { 979525698886725663, 979525700816076850, 979525702749675540, 979525704137994310 };
+    private static readonly ulong[] casinoListMessageIds = new ulong[] { 982034109473882182, 982034110677667850, 982034111826898955, 982034113471070239 };
     private static readonly ulong DannUserId = 109065356085047296;
     private const int TotalPotSize = 110;
     private const int PotChunkSize = 30;
+    private const string EmptyMessage = "---------";
     
     [Command("casino")]
     [Name("casino help")]
@@ -234,6 +235,7 @@ public class Casino : ModuleBase<SocketCommandContext>
         var messages = await Task.WhenAll(messageTasks);
         foreach(var message in messages)
         {
+            if (message.Content == EmptyMessage) continue;
             cards.AddRange(message.Content.Split('\n'));
         }
         return cards.ToArray();
@@ -242,21 +244,20 @@ public class Casino : ModuleBase<SocketCommandContext>
     private async Task UpdateCasinoList(string[] cardList)
     {
         var listChunks = cardList.Chunk(PotChunkSize).ToList();
-        var emptyMessage = "---------";
         for (var i = 0; i < casinoListMessageIds.Length; i++)
         {
             var messageId = casinoListMessageIds[i];
             if(i < listChunks.Count)
             {
                 var cardBatch = listChunks[i].ToList();
-                cardBatch.RemoveAll(c => c == emptyMessage || c == "\n");
+                cardBatch.RemoveAll(c => c == EmptyMessage || c == "\n");
                 cardBatch = cardBatch.Select(c => c.ReplaceLineEndings("\n")).ToList();
                 var newMessage = string.Join('\n', cardBatch);
                 Context.Guild.GetTextChannel(casinoPotChannelId).ModifyMessageAsync(messageId, m => m.Content = newMessage);
                 Thread.Sleep(100);
             }else
             {
-                Context.Guild.GetTextChannel(casinoPotChannelId).ModifyMessageAsync(messageId, m => m.Content = emptyMessage);
+                Context.Guild.GetTextChannel(casinoPotChannelId).ModifyMessageAsync(messageId, m => m.Content = EmptyMessage);
                 Thread.Sleep(100);
             }
         }
