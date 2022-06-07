@@ -207,6 +207,7 @@ public class Casino : ModuleBase<SocketCommandContext>
 
     [Command("pika")]
     [Name("cheers!")]
+    [Alias("pikachu", "goodluckpikachu")]
     public async Task PikachuCommand()
     {
         await ReplyAsync($"https://tenor.com/bfPFK.gif");
