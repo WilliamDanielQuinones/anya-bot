@@ -205,6 +205,13 @@ public class Casino : ModuleBase<SocketCommandContext>
         await ReplyAsync($"The casino is now {(IsCasinoOpen() ? "open" : "closed")}!");
     }
 
+    [Command("pika")]
+    [Name("cheers!")]
+    public async Task PikachuCommand()
+    {
+        await ReplyAsync($"https://tenor.com/bfPFK.gif");
+    }
+
     private bool IsCasinoOpen()
     {
         var casinoState = cache["casinoopen"];
