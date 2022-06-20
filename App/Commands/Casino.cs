@@ -15,7 +15,7 @@ public class Casino : ModuleBase<SocketCommandContext>
     readonly Random rand = new();
     private static readonly ObjectCache cache = MemoryCache.Default;
     private static readonly ulong casinoPotChannelId = 979520973009199114;
-    private static readonly ulong[] casinoListMessageIds = new ulong[] { 984504211930775695, 984504213772042290, 984504215256830044, 984504216775163915 };
+    private static readonly ulong[] casinoListMessageIds = new ulong[] { 988467866338721833, 988467867433463899, 988467868280705106 };
     private static readonly ulong DannUserId = 109065356085047296;
     private const int TotalPotSize = 110;
     private const int PotChunkSize = 30;
