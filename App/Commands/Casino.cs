@@ -15,10 +15,10 @@ public class Casino : ModuleBase<SocketCommandContext>
     readonly Random rand = new();
     private static readonly ObjectCache cache = MemoryCache.Default;
     private static readonly ulong casinoPotChannelId = 979520973009199114;
-    private static readonly ulong[] casinoListMessageIds = new ulong[] { 988467866338721833, 988467867433463899, 988467868280705106 };
+    private static readonly ulong[] casinoListMessageIds = new ulong[] { 989950081643974737, 989950083132948500, 989950084139606077, 989950085024579595, 989950086182236200 };
     private static readonly ulong DannUserId = 109065356085047296;
-    private const int TotalPotSize = 110;
-    private const int PotChunkSize = 30;
+    private const int TotalPotSize = 120;
+    private const int PotChunkSize = 25;
     private const string EmptyMessage = "---------";
     
     [Command("casino")]
@@ -30,7 +30,7 @@ public class Casino : ModuleBase<SocketCommandContext>
         embed.Color = Color.Red;
 
         embed.Title = "--------------------WELCOME TO THE CARD CASINO--------------------";
-        embed.AddField("How to Play", "𝟥 𝖳𝖨𝖢𝖪𝖤𝖳𝖲 𝖳𝖮 𝖯𝖫𝖠𝖸 | Kmt Dann IN THE #card-casino-floor channel | CALL ANYA-BOT BY USING THE COMMAND `d!casinoroll` OR `d!roll` | 𝖫𝖮𝖢𝖪-𝖨𝖭 𝟥 𝖳𝖨𝖢𝖪𝖤𝖳𝖲​​​​​ | CARD LIST IN #card-casino-pot channel", true);
+        embed.AddField("How to Play", "5 𝖳𝖨𝖢𝖪𝖤𝖳𝖲 𝖳𝖮 𝖯𝖫𝖠𝖸 | Kmt Dann IN THE #card-casino-floor channel | CALL ANYA-BOT BY USING THE COMMAND `d!casinoroll` OR `d!roll` | 𝖫𝖮𝖢𝖪-𝖨𝖭 5 𝖳𝖨𝖢𝖪𝖤𝖳𝖲​​​​​ | CARD LIST IN #card-casino-pot channel", true);
 
         await Context.Channel.SendMessageAsync("", false, embed.Build());
     }
@@ -179,7 +179,7 @@ public class Casino : ModuleBase<SocketCommandContext>
         }
         var casinoCards = cards.Where(c => c.Tag == "casino").OrderBy(c => rand.Next()).Take(TotalPotSize).Select(c => new CasinoCard(c)).OrderBy(c => c.Series).ToList();
 
-        // Cut into chunks of 35 to account for discord's message limit
+        // Cut into chunks of 30 to account for discord's message limit
         var cardLists = casinoCards.Chunk(PotChunkSize).ToArray();
         var messages = new List<IUserMessage>();
         foreach (var cardList in cardLists)

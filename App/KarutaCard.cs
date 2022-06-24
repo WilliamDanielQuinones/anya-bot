@@ -32,7 +32,7 @@ public class CasinoCard
     public CasinoCard(KarutaCard card)
     {
         Code = card.Code;
-        Character = $"{card.Character}{(int.Parse(card.Wishlists) > 999 ? ":moneybag:" : "")}";
+        Character = $"{card.Character}{(int.Parse(card.Wishlists) > 999 || int.Parse(card.Number) < 100 ? " :moneybag:" : "")}";
         Series = card.Series;
     }
     
